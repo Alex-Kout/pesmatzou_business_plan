@@ -102,11 +102,11 @@ break_even_month = next((r["Month"] for r in rows if r["Cumulative Profit"] >= 0
 
 c1, c2 = st.columns(2)
 with c1:
-    st.markdown(f'<div class="metric-card">Your Net Profit (36mo): <div class="value">€ {total_net:,.2f}</div></div>',
+    st.markdown(f'<div class="metric-card">Το συνολικό σου καθαρό κέρδος (36mo): <div class="value">€ {total_net:,.2f}</div></div>',
                 unsafe_allow_html=True)
 with c2:
     bep = f"Month {break_even_month}" if break_even_month else "Not reached"
-    st.markdown(f'<div class="metric-card">Break-even Month: <div class="value">{bep}</div></div>',
+    st.markdown(f'<div class="metric-card">Θα κάνεις Break-even τον μήνα: <div class="value">{bep}</div></div>',
                 unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
