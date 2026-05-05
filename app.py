@@ -4,133 +4,127 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Πεσματζού Business Plan", layout="wide", page_icon="📊")
 
-# --- Custom CSS ---
-st.markdown("""
-<style>
-    .metric-card { 
-        background: #1e293b; 
-        border-radius: 12px; 
-        padding: 20px; 
-        color: white; 
-        border: 1px solid #334155; 
-    }
-    .value { 
-        font-size: 24px; 
-        font-weight: 700; 
-    }
-
-    /* Center align numbers inside data_editor */
-    div[data-testid="stDataEditor"] div[role="gridcell"] {
-        justify-content: center !important;
-        text-align: center !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 st.title("📊 Πεσματζού Business Plan (36 Months)")
 
 # --- Sidebar ---
-st.sidebar.header("⚙️ Συμπλήρωσε τις βασικές παραμέτρους")
-dev_cost = st.sidebar.number_input("Κόστος κατασκευής του app (€)", value=2800, step=100)
-price_per_customer = st.sidebar.number_input("Μηνιαία τιμή ανά πελάτη (€)", value=28.15, step=0.5)
-monthly_fixed_cost = st.sidebar.number_input("Μηνιαία σταθερά κόστη (€)", value=50, step=10)
-marketing_expense = st.sidebar.number_input("Μηνιαία έξοδα Marketing (€)", value=100, step=10)
+st.sidebar.header("⚙️ Βασικές παράμετροι")
+dev_cost = st.sidebar.number_input("Κόστος κατασκευής (€)", value=2800)
+price_per_customer = st.sidebar.number_input("Τιμή ανά πελάτη (€)", value=28.15)
+monthly_fixed_cost = st.sidebar.number_input("Σταθερά κόστη (€)", value=50)
+marketing_expense = st.sidebar.number_input("Marketing (€)", value=100)
 
 # --- Growth ---
-st.subheader("Ρύθμιση Ανάπτυξης Πελατών")
+st.subheader("Ανάπτυξη Πελατών")
 col1, col2 = st.columns(2)
 with col1:
-    start_customers = st.number_input("Πελάτες Μήνα 1", min_value=0, value=2)
+    start_customers = st.number_input("Πελάτες Μήνα 1", value=2)
 with col2:
-    growth_per_month = st.number_input("Μηνιαία Αύξηση Πελατών", min_value=0, value=1)
+    growth_per_month = st.number_input("Αύξηση ανά μήνα", value=1)
 
-# --- Manual Override ---
-manual_mode = st.checkbox("Θέλω να ορίσω χειροκίνητα πελάτες ανά μήνα")
+manual_mode = st.checkbox("Χειροκίνητη εισαγωγή πελατών")
 
 if manual_mode:
-    st.subheader("Χειροκίνητη εισαγωγή πελατών ανά μήνα")
-
     manual_df = pd.DataFrame({
         "Month": list(range(1, 37)),
         "Customers": [start_customers + i * growth_per_month for i in range(36)]
     })
-
     edited_df = st.data_editor(manual_df, num_rows="fixed", use_container_width=True)
     customers_data = edited_df["Customers"].tolist()
 else:
-    customers_data = [start_customers + (i * growth_per_month) for i in range(36)]
+    customers_data = [start_customers + i * growth_per_month for i in range(36)]
 
-# --- Calculations ---
-rows = []
-cumulative = -dev_cost  # YOU pay full dev upfront
+# --- Tabs ---
+tab1, tab2 = st.tabs(["Scenario 1 (50-50 Deal)", "Scenario 2 (Tiered Cost)"])
 
-for i, customers in enumerate(customers_data):
-    month = i + 1
+# =========================
+# ✅ SCENARIO 1
+# =========================
+with tab1:
+    rows = []
+    cumulative = -dev_cost
 
-    revenue = customers * price_per_customer
-    total_costs = monthly_fixed_cost + marketing_expense
+    for i, customers in enumerate(customers_data):
+        month = i + 1
 
-    net_profit = revenue - total_costs
+        revenue = customers * price_per_customer
+        total_costs = monthly_fixed_cost + marketing_expense
+        net_profit = revenue - total_costs
 
-    # 50-50 split
-    your_profit = net_profit * 0.5
-    developer_profit = net_profit * 0.5
+        your_profit = net_profit * 0.5
+        yearly_cost = 600 if month % 12 == 0 else 0
+        your_profit -= yearly_cost
 
-    # yearly extra cost from YOUR side
-    yearly_cost = 600 if month % 12 == 0 else 0
-    your_profit_after_cost = your_profit - yearly_cost
+        cumulative += your_profit
 
-    cumulative += your_profit_after_cost
+        rows.append({
+            "Month": month,
+            "Customers": customers,
+            "Your Profit": round(your_profit, 2),
+            "Cumulative Profit": round(cumulative, 2),
+        })
 
-    rows.append({
-        "Month": month,
-        "Customers": customers,
-        "Revenue": round(revenue, 2),
-        "Total Costs": round(total_costs, 2),
-        "Net Profit": round(net_profit, 2),
-        "Your Profit": round(your_profit_after_cost, 2),  # <-- THIS MUST MATCH
-        "Dev Profit": round(developer_profit, 2),
-        "Extra Yearly Cost": yearly_cost,
-        "Cumulative Profit": round(cumulative, 2),
-    })
+    df1 = pd.DataFrame(rows)
 
-df = pd.DataFrame(rows)
+    st.subheader("Scenario 1 Results")
+    st.line_chart(df1.set_index("Month")["Cumulative Profit"])
+    st.dataframe(df1)
 
-# --- KPIs ---
-total_net = df["Your Profit"].sum() - dev_cost
-break_even_month = next((r["Month"] for r in rows if r["Cumulative Profit"] >= 0), None)
+# =========================
+# ✅ SCENARIO 2 (NEW)
+# =========================
+with tab2:
 
-c1, c2 = st.columns(2)
-with c1:
-    st.markdown(f'<div class="metric-card">Το συνολικό σου καθαρό κέρδος (36mo): <div class="value">€ {total_net:,.2f}</div></div>',
-                unsafe_allow_html=True)
-with c2:
-    bep = f"Month {break_even_month}" if break_even_month else "Not reached"
-    st.markdown(f'<div class="metric-card">Θα κάνεις Break-even τον μήνα: <div class="value">{bep}</div></div>',
-                unsafe_allow_html=True)
+    # Cost mapping based on your table
+    def get_cost(customers):
+        if customers <= 3:
+            return 50
+        elif customers <= 10:
+            return 100
+        elif customers <= 25:
+            return 180
+        elif customers <= 50:
+            return 260
+        else:
+            return 450
 
-st.markdown("<br>", unsafe_allow_html=True)
+    rows = []
+    cumulative = -dev_cost
 
-# --- Charts ---
-col_a, col_b = st.columns(2)
+    for i, customers in enumerate(customers_data):
+        month = i + 1
 
-with col_a:
-    fig1, ax1 = plt.subplots()
-    ax1.bar(df["Month"], df["Your Profit"])
-    ax1.set_xlabel("Μήνες")
-    ax1.set_ylabel("Δικό σου κέρδος")
-    ax1.set_title("Μηνιαίο κέρδος (μετά split & κόστη)")
-    st.pyplot(fig1)
+        revenue = customers * price_per_customer
+        dynamic_cost = get_cost(customers)
 
-with col_b:
-    fig2, ax2 = plt.subplots()
-    ax2.plot(df["Month"], df["Cumulative Profit"], linewidth=2)
-    ax2.axhline(0, linestyle="--")
-    ax2.set_xlabel("Μήνες")
-    ax2.set_ylabel("Συσσωρευμένο κέρδος")
-    ax2.set_title("Συσσωρευμένο δικό σου κέρδος")
-    st.pyplot(fig2)
+        net_profit = revenue - dynamic_cost
+        cumulative += net_profit
 
-# --- Table ---
-with st.expander("Δείτε αναλυτικά τα δεδομένα"):
-    st.dataframe(df, use_container_width=True)
+        rows.append({
+            "Month": month,
+            "Customers": customers,
+            "Revenue": round(revenue, 2),
+            "Cost": dynamic_cost,
+            "Net Profit": round(net_profit, 2),
+            "Cumulative Profit": round(cumulative, 2),
+        })
+
+    df2 = pd.DataFrame(rows)
+
+    st.subheader("Scenario 2 Results")
+
+    colA, colB = st.columns(2)
+
+    with colA:
+        fig1, ax1 = plt.subplots()
+        ax1.bar(df2["Month"], df2["Net Profit"])
+        ax1.set_title("Net Profit per Month")
+        st.pyplot(fig1)
+
+    with colB:
+        fig2, ax2 = plt.subplots()
+        ax2.plot(df2["Month"], df2["Cumulative Profit"])
+        ax2.axhline(0, linestyle="--")
+        ax2.set_title("Cumulative Profit")
+        st.pyplot(fig2)
+
+    st.dataframe(df2)
