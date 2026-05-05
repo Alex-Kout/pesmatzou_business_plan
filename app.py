@@ -83,15 +83,15 @@ for i, customers in enumerate(customers_data):
     cumulative += your_profit_after_cost
 
     rows.append({
-        "Μήνας": month,
-        "Πελάτες": customers,
-        "Τζίρος": round(revenue, 2),
-        "Συνολικά κόστη": round(total_costs, 2),
-        "Κέρδος": round(net_profit, 2),
-        "Δικό σου κέρδος": round(your_profit_after_cost, 2),
-        "Κέρδος προγραμματιστή": round(developer_profit, 2),
-        "Extra Ετήσιο κόστος": yearly_cost,
-        "Συσσωρευμένο κέρδος": round(cumulative, 2),
+        "Month": month,
+        "Customers": customers,
+        "Revenue": round(revenue, 2),
+        "Total Costs": round(total_costs, 2),
+        "Net Profit": round(net_profit, 2),
+        "Your Profit": round(your_profit_after_cost, 2),  # <-- THIS MUST MATCH
+        "Dev Profit": round(developer_profit, 2),
+        "Extra Yearly Cost": yearly_cost,
+        "Cumulative Profit": round(cumulative, 2),
     })
 
 df = pd.DataFrame(rows)
